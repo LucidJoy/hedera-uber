@@ -14,7 +14,7 @@ const QrScanner = ({ isRide }) => {
 
   useEffect(() => {
     if (code === "http://localhost:3000/anywhere?ride=true") {
-      router.push("http://localhost:3000/anywhere?ride=true");
+      router.push("https://hedera-uber.vercel.app/anywhere?ride=true");
     } else if (
       code ===
       "https://metamask.app.link/send/pay-0xb53A165f344827da29f7d489F549a197F18528d1@296"
