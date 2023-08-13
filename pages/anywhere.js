@@ -124,16 +124,12 @@ const Anywhere = () => {
         <div className='flex items-center justify-center h-full transition-all duration-300 ease-in-out'>
           {ride && !isFinished && (
             <div className='border-t-[1px] h-full w-full flex items-center justify-center flex-col gap-[20px]'>
-              <h1 className='font-semibold'>Price</h1>
+              <h1 className='font-semibold'>Price (HBAR)</h1>
               <div className='rounded-full h-[80px] w-[80px] bg-gray-200 -mt-[15px] relative'>
                 <p className='flex items-center justify-center w-full h-full font-medium text-[20px]'>
                   {anywherePrice}
                 </p>
               </div>
-
-              <p className='absolute right-[650px] top-[590px] text-[20px]'>
-                HBAR
-              </p>
 
               <button
                 onClick={() => {
