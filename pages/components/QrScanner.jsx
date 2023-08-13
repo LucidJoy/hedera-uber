@@ -20,6 +20,7 @@ const QrScanner = ({ isRide }) => {
       "https://metamask.app.link/send/pay-0xb53A165f344827da29f7d489F549a197F18528d1@296"
     ) {
       acceptPayment();
+      router.push("http://localhost:3000/");
     } else {
       code && alert("Invalid QR Code.");
     }
