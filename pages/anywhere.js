@@ -1,6 +1,5 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
-import QRCode from "qrcode";
 
 import UberContext from "../context/UberContext";
 import Map from "./components/Map";
@@ -12,75 +11,47 @@ const Anywhere = () => {
     anywherePrice,
     setAnywherePrice,
     pickup,
-    latitute,
-    longitute,
     currentUser,
     currentLocation,
-    setCurrentLocation,
+    acceptPayment,
+    qrComponent,
+    setQrComponent,
+    setIntervalActive,
+    intervalActive,
   } = useContext(UberContext);
 
-  const [intervalActive, setIntervalActive] = useState(true);
   const [stream, setStream] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [rideStart, setRideStart] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [intervalId, setIntervalId] = useState(null);
 
   const router = useRouter();
   const { ride } = router.query;
-  let intervalId;
 
   useEffect(() => {
-    if (ride == true) {
-      setRideStart(true);
+    if (ride === "true") {
+      setIntervalActive(true);
     }
-  }, []);
+  }, [ride]);
 
-  // const generateQrCode = () => {
-  //   QRCode.toDataURL(
-  //     `http://localhost:3000/anywhere?ride=true`,
-  //     {
-  //       width: 800,
-  //       margin: 2,
-  //       color: {
-  //         light: "#ffffff",
-  //         dark: "#161616",
-  //       },
-  //     },
-  //     (err, url) => {
-  //       if (err) return console.log(err);
-
-  //       setQrcode(url);
-  //       setRideStart(true);
-  //       setAnywherePrice(0);
-  //     }
-  //   );
-  // };
-
-  // useEffect(() => {
-  //   generateQrCode();
-  //   setQrClick(false);
-  // }, []);
+  useEffect(() => setQrComponent(false), []);
 
   useEffect(() => {
     if (intervalActive) {
-      intervalId = setInterval(() => {
+      const newIntervalId = setInterval(() => {
         setAnywherePrice((prevPrice) => prevPrice + 1);
-      }, 2000);
+      }, 10000);
 
-      return () => {
-        clearInterval(intervalId);
-      };
+      setIntervalId(newIntervalId);
     }
   }, [intervalActive]);
 
-  useEffect(() => {
-    setRideStart(false);
-    setIsFinished(false);
-  }, []);
-
   const stopCount = () => {
-    clearInterval(intervalId); // Clear the interval when the button is clicked
-    setIntervalActive(false); // Update the interval state
+    setIsFinished(true); // Set isFinished to true when Finish Ride is clicked
+    setIsCameraOpen(false); // Close camera
+    clearInterval(intervalId); // Clear interval
+    setIntervalId(null); // Reset intervalId
+    setIntervalActive(false);
   };
 
   const videoRef = useRef(null);
@@ -131,6 +102,15 @@ const Anywhere = () => {
             className='h-28'
           />
 
+          {anywherePrice ? (
+            <div className='w-fit px-[20px] py-[10px] top-[80px] rounded-[15px] left-4 z-10 bg-white shadow-md font-normal text-[16px] border hover:bg-slate-50 transition-all duration-200 ease-in-out'>
+              Amount to be paid:{" "}
+              <span className='font-medium'>{anywherePrice} HBAR</span>
+            </div>
+          ) : (
+            ""
+          )}
+
           <p className='mr-[25px] font-semibold'>
             {shortenAddress(currentUser)}
           </p>
@@ -141,21 +121,7 @@ const Anywhere = () => {
           <span className='font-medium'>{currentLocation}</span>
         </p>
 
-        {/* once qr is scanned, make a var true and start the timer */}
-
         <div className='flex items-center justify-center h-full transition-all duration-300 ease-in-out'>
-          {/* {!ride && (
-            <div>
-              <img
-                src={qrcode}
-                alt='url'
-                width={180}
-                height={180}
-                className='rounded-[10px]'
-              />
-            </div>
-          )} */}
-
           {ride && !isFinished && (
             <div className='border-t-[1px] h-full w-full flex items-center justify-center flex-col gap-[20px]'>
               <h1 className='font-semibold'>Price</h1>
@@ -172,6 +138,7 @@ const Anywhere = () => {
               <button
                 onClick={() => {
                   setIsFinished(true);
+                  setIntervalActive(false);
                   stopCount();
                   toggleCamera();
                 }}
@@ -184,13 +151,6 @@ const Anywhere = () => {
 
           {ride && isFinished && (
             <div className='flex items-center justify-center'>
-              {/* <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className='h-full w-[200px]'
-              /> */}
-
               <QrScanner />
             </div>
           )}
@@ -199,14 +159,12 @@ const Anywhere = () => {
             <>
               {isCameraOpen ? (
                 <div className='flex items-center justify-center gap-[50px]'>
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    className='h-full w-[200px]'
-                  />
+                  <QrScanner isRide={true} />
                   <button
-                    onClick={toggleCamera}
+                    onClick={() => {
+                      toggleCamera();
+                      setQrComponent(false);
+                    }}
                     className='w-fit px-[20px] py-[15px] top-[80px] rounded-[15px] left-4 z-10 bg-white shadow-md font-medium text-[16px] border hover:bg-slate-50 transition-all duration-200 ease-in-out'
                   >
                     Close Camera
@@ -214,7 +172,10 @@ const Anywhere = () => {
                 </div>
               ) : (
                 <button
-                  onClick={toggleCamera}
+                  onClick={() => {
+                    toggleCamera();
+                    setQrComponent(true);
+                  }}
                   className='w-fit px-[20px] py-[15px] top-[80px] rounded-[15px] left-4 z-10 bg-white shadow-md font-medium text-[16px] border hover:bg-slate-50 transition-all duration-200 ease-in-out'
                 >
                   Open Camera

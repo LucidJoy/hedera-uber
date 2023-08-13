@@ -1,9 +1,10 @@
 import React, { createContext, useEffect, useState } from "react";
 import { ethers } from "ethers";
-import Web3 from "web3";
 import { useRouter } from "next/router";
 import { point, distance } from "@turf/turf";
-import axios from "axios";
+import Web3Modal from "web3modal";
+
+import journeyABI from "./Journey.json";
 
 const UberContext = createContext({});
 
@@ -16,13 +17,17 @@ export const UberProvider = ({ children }) => {
   const [totalDistance, setTotalDistance] = useState();
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState("");
-  const [anywherePrice, setAnywherePrice] = useState(1);
+  const [anywherePrice, setAnywherePrice] = useState(0);
   const [point1, setPoint1] = useState([0, 0]);
   const [point2, setPoint2] = useState([0, 0]);
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
   const [currentLocation, setCurrentLocation] = useState("");
   const [code, setCode] = useState("");
+  const [qrComponent, setQrComponent] = useState(false);
+  const [intervalActive, setIntervalActive] = useState(false);
+
+  const journeyContractAddr = "0x169bBdD96bC529424a775AFb946Cf6DB407c3D4b";
 
   const router = useRouter();
 
@@ -81,6 +86,40 @@ export const UberProvider = ({ children }) => {
       console.log(error);
     }
   }, []);
+
+  const acceptPayment = async () => {
+    try {
+      if (window.ethereum) {
+        const web3Modal = new Web3Modal();
+        const connection = await web3Modal.connect();
+        const provider = new ethers.providers.Web3Provider(connection);
+        const signer = provider.getSigner();
+
+        const contract = new ethers.Contract(
+          journeyContractAddr,
+          journeyABI,
+          signer
+        );
+
+        console.log("contract -> ", contract);
+
+        const accounts = await window.ethereum.request({
+          method: "eth_accounts",
+        });
+        // console.log("account: ", accounts[0]);
+        const txRes = await contract.acceptPayment({
+          value: ethers.utils.parseEther(String(anywherePrice)),
+          gasLimit: 50000,
+        });
+
+        await txRes.wait();
+
+        console.log(txRes);
+      }
+    } catch (error) {
+      console.log("acceptPayment -> ", error);
+    }
+  };
 
   const getPickupCoordinates = (pickup) => {
     fetch(
@@ -173,6 +212,11 @@ export const UberProvider = ({ children }) => {
         setCurrentLocation,
         code,
         setCode,
+        acceptPayment,
+        qrComponent,
+        setQrComponent,
+        intervalActive,
+        setIntervalActive,
       }}
     >
       {children}
